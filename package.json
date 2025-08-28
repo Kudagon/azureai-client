@@ -1,16 +1,22 @@
 {
   "name": "@kudagon/azureai-client",
-  "version": "2.0.0",
+  "version": "1.0.1",
   "description": "Kudagon's TypeScript client for Azure OpenAI Assistants API",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
-    "prepublishOnly": "npm run build",
     "dev": "tsup src/index.ts --watch --format cjs,esm --dts"
   },
   "keywords": [
@@ -18,9 +24,7 @@
     "openai",
     "ai",
     "assistants",
-    "client",
-    "kudagon",
-    "kudagon-azureai-client"
+    "client"
   ],
   "author": "Samuel Benny <smithkruz>",
   "license": "MIT",
