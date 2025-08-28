@@ -1,16 +1,18 @@
-# @kudagon/azureai-client
+# @kudagon/azureai-client  
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-A lightweight TypeScript client for the **Azure OpenAI Assistants API**, supporting file uploads, conversation threads, and response persistence.  
+A lightweight, fully-typed TypeScript client for the **Azure OpenAI Chat/Assistants API**, designed for Node.js.  
+Supports file uploads, conversation state management, and response persistence.  
 
 ---
 
 ## ✨ Features
-- Full TypeScript support with IntelliSense  
-- Works on **Node 16 (via undici)** and **Node 18+ (native fetch/FormData/Blob)**  
-- File upload + cleanup helpers  
-- Conversation management (messages, assistants, threads)  
-- Save responses to JSON or text files  
+- 📘 Full TypeScript support with IntelliSense  
+- 🌐 Works on **Node 16+** (`undici` polyfill) and **Node 18+** (native `fetch/FormData/Blob`)  
+- 📂 File upload + cleanup helpers  
+- 💬 Conversation management (messages, assistants, threads)  
+- 💾 Save responses to JSON or text  
+- 🔍 Convenient helpers for raw and plain text responses  
 
 ---
 
@@ -22,7 +24,7 @@ npm install @kudagon/azureai-client
 
 ---
 
-## 🚀 Usage
+## 🚀 Quick Start
 
 ```ts
 import KudagonAzureAIClient from "@kudagon/azureai-client";
@@ -34,24 +36,21 @@ const client = new KudagonAzureAIClient({
   apiVersion: "2024-08-01-preview",              // optional, defaults provided
 });
 
-// Add messages
-client.add_message({ role: "system", content: "You are a helpful assistant." });
-client.add_message({ role: "user", content: "Analyze this dataset." });
-
-// Optionally attach files
-client.add_file({ file_path: "./data.json", file_type: "json" });
+// Add conversation messages
+await client.add_message({ role: "system", content: "You are a helpful assistant." });
+await client.add_message({ role: "user", content: "Tell me a joke about Nigerian economy." });
 
 // Run the request
 await client.fetch();
 
-// Save the response to a file
-await client.save_response({ file_name: "response.json" });
+// Get just the assistant’s reply string
+console.log(client.response());
 
-// Inspect current state
-console.log(client.get_state());
+// Or inspect the full raw JSON response
+console.log(client.raw_response());
 
-// Clear conversation if needed
-client.clear();
+// Save to disk
+await client.save_response({ file_name: "output.json" });
 ```
 
 ---
@@ -75,35 +74,55 @@ Create a new client instance.
 
 ### Core Methods
 
-* **`add_message(message: Message | Message[])`**
-  Add one or more messages (`role: "user" | "assistant" | "system"`).
+#### `add_message(message: Message | Message[])`
 
-* **`add_file(fileConfig: FileConfig)`**
-  Attach a file from disk or raw content (`file_path` or `raw_file` + `file_name`).
+Add one or more chat messages (`role: "user" | "assistant" | "system"`).
 
-* **`set_options(options: GenerationOptions)`**
-  Override generation parameters (max\_tokens, temperature, top\_p).
+#### `add_file(fileConfig: FileConfig)`
 
-* **`fetch()`**
-  Uploads files, creates/uses assistant + thread, runs completion, stores last response.
+Attach a file from disk (`file_path`) or raw content (`raw_file` + `file_name`).
 
-* **`save_response({ file_name, file_type })`**
-  Save last response as `json` or `text`.
+#### `set_options(options: GenerationOptions)`
 
-* **`get_state()`**
-  Get current conversation state (messages, files, options, assistant/thread IDs).
+Override generation parameters (e.g., `max_tokens`, `temperature`, `top_p`).
 
-* **`clear()`**
-  Reset messages, files, assistant, and thread.
+#### `fetch(): Promise<void>`
 
-* **File management:**
+Runs completion with the current state.
+Uploads files, creates/uses assistant + thread, and stores the last response.
 
-  * `list_files()` – List uploaded files
-  * `delete_file(fileId)` – Delete a file by ID
+#### `response(): string`
 
-* **Assistant management:**
+Returns **just the assistant’s latest reply** (string).
+Throws if no response is available.
 
-  * `delete_assistant()` – Delete the current assistant
+#### `raw_response(): CompletionResponse`
+
+Returns the **full structured JSON response** from Azure.
+Includes choices, token usage, finish reasons, etc.
+
+#### `save_response({ file_name, file_type }): Promise<void>`
+
+Persist the last response as `.json` or `.txt`.
+
+#### `get_state()`
+
+Inspect current conversation state (messages, files, options, assistant/thread IDs).
+
+#### `clear()`
+
+Reset messages, files, assistant, and thread state.
+
+---
+
+### File Management
+
+* `list_files()` – List uploaded files
+* `delete_file(fileId)` – Delete a file by ID
+
+### Assistant Management
+
+* `delete_assistant()` – Delete the current assistant
 
 ---
 
@@ -122,3 +141,36 @@ Build:
 ```bash
 npm run build
 ```
+
+---
+
+## 📖 Example with dotenv
+
+```ts
+import { config } from "dotenv";
+import KudagonAzureAIClient from "@kudagon/azureai-client";
+
+config(); // Load .env variables
+
+const client = new KudagonAzureAIClient({
+  apiKey: process.env.AZURE_OPENAI_KEY!,
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT!,
+  deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT!,
+  apiVersion: process.env.API_VERSION!,
+});
+
+(async () => {
+  await client.add_message({ role: "system", content: "You are a Nigerian comedian." });
+  await client.add_message({ role: "user", content: "Give me a quick joke about Lagos traffic." });
+
+  await client.fetch();
+
+  console.log("Assistant:", client.response());
+})();
+```
+
+---
+
+## 📜 License
+
+MIT © [Kudagon](https://github.com/Kudagon)

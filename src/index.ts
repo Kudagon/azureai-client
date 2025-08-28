@@ -79,6 +79,22 @@ interface UploadedFile {
   type: FileType;
 }
 
+interface CompletionChoice {
+  index: number;
+  message: {
+    role: Role;
+    content: string;
+  };
+  finish_reason: string;
+}
+interface CompletionResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: CompletionChoice[];
+}
+
 /**
  * Kudagon Azure AI Client (TypeScript)
  */
@@ -97,7 +113,7 @@ export class KudagonAzureAIClient {
   threadId: string | null = null;
   initMsg: string;
 
-  private _lastResponse?: any;
+  private _lastResponse?: CompletionResponse;
 
   constructor(config: AzureAIConfig) {
     this.endpoint = config.endpoint;
@@ -607,6 +623,39 @@ export class KudagonAzureAIClient {
       throw error;
     }
   }
+
+  /**
+   * Returns the **entire raw response object** from the last API call.
+   *
+   * Useful if you need access to metadata like usage, tokens,
+   * role, or multiple choices returned by the model.
+   *
+   * @throws {Error} If no response is available (call `fetch()` first).
+   * @returns {any} The raw response object returned by the Azure AI API.
+   */
+  raw_response(): CompletionResponse {
+    if (!this._lastResponse) {
+      throw new Error("No response available. Call fetch() first.");
+    }
+    return this._lastResponse;
+  }
+
+  /**
+   * Returns only the **assistant's reply text** from the last API call.
+   *
+   * This is a convenience method for quickly grabbing the generated text,
+   * without parsing the full raw response object.
+   *
+   * @throws {Error} If no response is available (call `fetch()` first).
+   * @returns {string} The assistant’s reply string, or an empty string if none.
+   */
+  response(): string {
+    if (!this._lastResponse) {
+      throw new Error("No response available. Call fetch() first.");
+    }
+    return this._lastResponse?.choices?.[0]?.message?.content ?? "";
+  }
 }
 
+export type { CompletionResponse, CompletionChoice };
 export default KudagonAzureAIClient;
